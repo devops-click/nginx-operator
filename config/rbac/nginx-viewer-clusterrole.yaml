@@ -1,0 +1,28 @@
+# ClusterRole: nginx-viewer
+# Read-only access to all NGINX Operator CRDs.
+# Useful for monitoring, dashboards, and audit.
+#
+# Usage:
+#   kubectl create clusterrolebinding nginx-viewer-all \
+#     --clusterrole=nginx-viewer \
+#     --group=developers
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nginx-viewer
+  labels:
+    app.kubernetes.io/part-of: nginx-operator
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+  - apiGroups: ["nginx.devops.click"]
+    resources:
+      - nginxservers
+      - nginxroutes
+      - nginxupstreams
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["nginx.devops.click"]
+    resources:
+      - nginxservers/status
+      - nginxroutes/status
+      - nginxupstreams/status
+    verbs: ["get", "list", "watch"]

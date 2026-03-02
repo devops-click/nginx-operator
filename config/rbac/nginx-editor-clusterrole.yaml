@@ -1,0 +1,36 @@
+# ClusterRole: nginx-editor
+# Edit access to NginxRoute and NginxUpstream only.
+# Application teams can create/edit routes and upstreams but NOT NginxServer.
+# This is the role you give to developers/app teams.
+#
+# Usage (namespace-scoped binding):
+#   kubectl create rolebinding nginx-editor-team-a \
+#     --clusterrole=nginx-editor \
+#     --group=team-a \
+#     --namespace=team-a-ns
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nginx-editor
+  labels:
+    app.kubernetes.io/part-of: nginx-operator
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+rules:
+  - apiGroups: ["nginx.devops.click"]
+    resources:
+      - nginxroutes
+      - nginxupstreams
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["nginx.devops.click"]
+    resources:
+      - nginxroutes/status
+      - nginxupstreams/status
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["nginx.devops.click"]
+    resources:
+      - nginxservers
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["nginx.devops.click"]
+    resources:
+      - nginxservers/status
+    verbs: ["get", "list", "watch"]

@@ -1,0 +1,29 @@
+# ClusterRole: nginx-admin
+# Full administrative access to all NGINX Operator CRDs.
+# Bind this to cluster admins or namespace admins who need full control.
+#
+# Usage:
+#   kubectl apply -f nginx-admin-clusterrole.yaml
+#   kubectl create clusterrolebinding nginx-admin-binding \
+#     --clusterrole=nginx-admin \
+#     --user=admin@example.com
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nginx-admin
+  labels:
+    app.kubernetes.io/part-of: nginx-operator
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+rules:
+  - apiGroups: ["nginx.devops.click"]
+    resources:
+      - nginxservers
+      - nginxroutes
+      - nginxupstreams
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["nginx.devops.click"]
+    resources:
+      - nginxservers/status
+      - nginxroutes/status
+      - nginxupstreams/status
+    verbs: ["get", "list", "watch"]
