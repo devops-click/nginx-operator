@@ -37,7 +37,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
 
 # --- Stage 2: Runtime ---
 # Using alpine here because the reloader needs to execute nginx -t and nginx -s reload
-FROM alpine:3.20
+FROM alpine:3.23
 
 LABEL org.opencontainers.image.title="NGINX Config Reloader" \
       org.opencontainers.image.description="Sidecar for safe NGINX configuration reloads" \
