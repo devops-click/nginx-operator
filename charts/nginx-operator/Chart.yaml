@@ -1,0 +1,40 @@
+apiVersion: v2
+name: nginx-operator
+description: >-
+  Kubernetes operator for managing NGINX server deployments with
+  declarative CRDs for routes, upstreams, and global configuration.
+  Production-grade with leader election, config validation, and
+  graceful reloads.
+
+type: application
+
+# Chart version — bumped when templates/values/CRDs change
+# Independent of the operator binary (appVersion)
+version: 0.1.0
+
+# Operator binary version — maps to the Docker image tag
+appVersion: "0.1.0"
+
+home: https://github.com/devops-click/nginx-operator
+sources:
+  - https://github.com/devops-click/nginx-operator
+
+maintainers:
+  - name: DevOps Click
+    url: https://github.com/devops-click
+
+keywords:
+  - nginx
+  - operator
+  - kubernetes
+  - reverse-proxy
+  - load-balancer
+  - ingress
+
+kubeVersion: ">=1.26.0-0"
+
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/operator: "true"
+  artifacthub.io/operatorCapabilities: Full Lifecycle
+  artifacthub.io/category: networking

@@ -1,0 +1,60 @@
+# ============================================================================
+# NGINX Config Reloader - Multi-stage Dockerfile
+# ============================================================================
+# Builds a minimal sidecar container that watches for NGINX config changes
+# and performs safe, validated reloads.
+#
+# Usage:
+#   docker build -f Dockerfile.reloader -t nginx-operator-reloader:1.0.0 .
+# ============================================================================
+
+# --- Stage 1: Build ---
+FROM golang:1.22-alpine AS builder
+
+ARG VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG BUILD_DATE=unknown
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+
+RUN apk add --no-cache git ca-certificates
+
+WORKDIR /workspace
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
+    -ldflags="-s -w \
+      -X github.com/devops-click/nginx-operator/internal/version.Version=${VERSION} \
+      -X github.com/devops-click/nginx-operator/internal/version.GitCommit=${GIT_COMMIT} \
+      -X github.com/devops-click/nginx-operator/internal/version.BuildDate=${BUILD_DATE}" \
+    -trimpath \
+    -o /workspace/bin/reloader \
+    ./cmd/reloader/
+
+# --- Stage 2: Runtime ---
+# Using alpine here because the reloader needs to execute nginx -t and nginx -s reload
+FROM alpine:3.20
+
+LABEL org.opencontainers.image.title="NGINX Config Reloader" \
+      org.opencontainers.image.description="Sidecar for safe NGINX configuration reloads" \
+      org.opencontainers.image.source="https://github.com/devops-click/nginx-operator" \
+      org.opencontainers.image.vendor="DevOps Click" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+# Install only what we need: nginx for config testing
+RUN apk add --no-cache ca-certificates tzdata && \
+    adduser -D -u 65532 reloader
+
+WORKDIR /
+
+COPY --from=builder /workspace/bin/reloader /reloader
+
+# The reloader needs to run as root to send signals to nginx master process
+# This is by design - the reloader manages the nginx process lifecycle
+USER 0:0
+
+ENTRYPOINT ["/reloader"]

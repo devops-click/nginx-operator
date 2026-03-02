@@ -1,0 +1,131 @@
+# ============================================================================
+# NGINX Operator - Helm Values
+# ============================================================================
+# Default configuration values for the NGINX Operator chart.
+# Override these values in your own values.yaml file.
+# ============================================================================
+
+# --- Operator Deployment ---
+replicaCount: 2  # HA with leader election
+
+image:
+  repository: ghcr.io/devops-click/nginx-operator
+  tag: ""  # Defaults to Chart.appVersion
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# --- Operator Configuration ---
+operator:
+  # Leader election settings for multi-replica HA
+  leaderElection:
+    enabled: true
+    id: "nginx-operator-leader.nginx.devops.click"
+    leaseDuration: 15s
+    renewDeadline: 10s
+    retryPeriod: 2s
+
+  # Logging
+  debug: false
+
+  # Reloader sidecar image tag (defaults to operator version)
+  reloaderTag: ""
+
+# --- Service Account ---
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# --- RBAC ---
+rbac:
+  create: true
+
+# --- Pod Configuration ---
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532
+
+# --- Resources ---
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# --- Probes ---
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: health
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# --- Service ---
+service:
+  type: ClusterIP
+  metricsPort: 8080
+  healthPort: 8081
+
+# --- Metrics / Monitoring ---
+metrics:
+  enabled: true
+
+  serviceMonitor:
+    enabled: false
+    namespace: ""
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+    # labels:
+    #   release: prometheus
+
+# --- Node Scheduling ---
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod topology spread constraints for HA
+topologySpreadConstraints: []
+# - maxSkew: 1
+#   topologyKey: topology.kubernetes.io/zone
+#   whenUnsatisfiable: DoNotSchedule
+#   labelSelector:
+#     matchLabels:
+#       app.kubernetes.io/name: nginx-operator
+
+# --- Pod Disruption Budget ---
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  # maxUnavailable: 1
+
+# --- Extra configuration ---
+extraEnvVars: []
+extraVolumes: []
+extraVolumeMounts: []

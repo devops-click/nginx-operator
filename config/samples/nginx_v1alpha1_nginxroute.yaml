@@ -1,0 +1,30 @@
+apiVersion: nginx.devops.click/v1alpha1
+kind: NginxRoute
+metadata:
+  name: example-route
+  namespace: default
+spec:
+  serverRef: example-nginx
+  serverName: example.com
+  priority: 100
+  headers:
+    securityHeaders: true
+    add:
+      X-Request-ID: "$request_id"
+  locations:
+    - path: /
+      upstreamRef: example-backend
+      proxySettings:
+        connectTimeout: "5s"
+        sendTimeout: "60s"
+        readTimeout: "60s"
+        webSocket: false
+        setHeaders:
+          Host: "$host"
+          X-Real-IP: "$remote_addr"
+          X-Forwarded-For: "$proxy_add_x_forwarded_for"
+          X-Forwarded-Proto: "$scheme"
+    - path: /health
+      return:
+        code: 200
+        body: "ok"

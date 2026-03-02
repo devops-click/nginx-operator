@@ -1,0 +1,44 @@
+# ============================================================================
+# Docker build context exclusions
+# ============================================================================
+
+# Version control
+.git
+.gitignore
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.windsurf/
+
+# Build artifacts
+bin/
+coverage/
+*.test
+*.out
+
+# Documentation (not needed in image)
+docs/
+*.md
+!README.md
+LICENSE
+
+# CI/CD
+.github/
+
+# Helm chart (not needed in image)
+charts/
+
+# Test files
+test/
+
+# Local config
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db

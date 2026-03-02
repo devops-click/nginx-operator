@@ -1,0 +1,59 @@
+============================================================
+  NGINX Operator has been installed!
+============================================================
+
+Chart Version: {{ .Chart.Version }}
+App Version:   {{ .Chart.AppVersion }}
+Namespace:     {{ .Release.Namespace }}
+Replicas:      {{ .Values.replicaCount }}
+
+To verify the operator is running:
+
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "nginx-operator.name" . }}
+
+To create your first NGINX instance:
+
+  cat <<EOF | kubectl apply -f -
+  apiVersion: nginx.devops.click/v1alpha1
+  kind: NginxServer
+  metadata:
+    name: my-nginx
+    namespace: default
+  spec:
+    replicas: 2
+    image: nginx:1.27-alpine
+    service:
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 80
+    monitoring:
+      enabled: true
+  EOF
+
+Then add a route:
+
+  cat <<EOF | kubectl apply -f -
+  apiVersion: nginx.devops.click/v1alpha1
+  kind: NginxRoute
+  metadata:
+    name: my-route
+    namespace: default
+  spec:
+    serverRef: my-nginx
+    serverName: example.com
+    locations:
+      - path: /
+        return:
+          code: 200
+          body: "Hello from NGINX Operator!"
+  EOF
+
+Check the status:
+
+  kubectl get nginxservers
+  kubectl get nginxroutes
+  kubectl get nginxupstreams
+
+For more information, visit:
+  https://github.com/devops-click/nginx-operator

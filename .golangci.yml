@@ -1,0 +1,139 @@
+# ============================================================================
+# golangci-lint configuration
+# ============================================================================
+# Strict linting rules for production-grade Kubernetes operator code.
+# Run with: make lint
+# ============================================================================
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+output:
+  formats:
+    - format: colored-line-number
+
+linters:
+  enable:
+    # Default linters
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # Extra linters for production quality
+    - bodyclose        # Check HTTP response body is closed
+    - contextcheck     # Check context.Context usage
+    - copyloopvar      # Detect loop variable capture issues
+    - dupl             # Detect code duplication
+    - durationcheck    # Check time.Duration multiplication
+    - errname          # Check error naming conventions
+    - errorlint        # Check error wrapping
+    - exhaustive       # Check exhaustive switch statements
+    - exportloopref    # Check loop variable export
+    - gocognit         # Cognitive complexity
+    - goconst          # Find repeated strings that could be constants
+    - gocritic         # Opinionated linter
+    - gocyclo          # Cyclomatic complexity
+    - godot            # Check comment formatting
+    - gofmt            # Check formatting
+    - goimports        # Check imports formatting
+    - gosec            # Security checks
+    - misspell         # Check spelling
+    - nakedret         # Check naked returns
+    - nestif           # Check deeply nested ifs
+    - nilerr           # Check nil error returns
+    - noctx            # Check HTTP requests without context
+    - nolintlint       # Check nolint directives
+    - prealloc         # Check slice preallocation
+    - predeclared      # Check predeclared identifier shadowing
+    - revive           # Replacement for golint
+    - stylecheck       # Style checker
+    - tenv             # Check os.Setenv in tests
+    - tparallel        # Check test parallelization
+    - unconvert        # Check unnecessary conversions
+    - unparam          # Check unused function parameters
+    - wastedassign     # Check wasted assignments
+    - whitespace       # Check unnecessary whitespace
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+
+  gocognit:
+    min-complexity: 20
+
+  dupl:
+    threshold: 150
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  nestif:
+    min-complexity: 5
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: superfluous-else
+      - name: unreachable-code
+
+  gosec:
+    excludes:
+      - G101  # Hardcoded credentials (too many false positives with k8s)
+
+  errorlint:
+    errorf: true
+    asserts: true
+    comparison: true
+
+issues:
+  exclude-rules:
+    # Allow dot imports in test files (ginkgo/gomega)
+    - path: _test\.go
+      linters:
+        - dupl
+        - gosec
+        - goconst
+    # Allow deep nesting in test setup
+    - path: _test\.go
+      linters:
+        - nestif
+        - gocognit
+    # Generated files
+    - path: zz_generated
+      linters:
+        - all
+  max-issues-per-linter: 0
+  max-same-issues: 0

@@ -1,0 +1,59 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "nginx-operator.fullname" . }}
+  labels:
+    {{- include "nginx-operator.labels" . | nindent 4 }}
+rules:
+  # NginxServer CRD
+  - apiGroups: ["nginx.devops.click"]
+    resources: ["nginxservers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["nginx.devops.click"]
+    resources: ["nginxservers/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["nginx.devops.click"]
+    resources: ["nginxservers/finalizers"]
+    verbs: ["update"]
+  # NginxRoute CRD
+  - apiGroups: ["nginx.devops.click"]
+    resources: ["nginxroutes"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["nginx.devops.click"]
+    resources: ["nginxroutes/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["nginx.devops.click"]
+    resources: ["nginxroutes/finalizers"]
+    verbs: ["update"]
+  # NginxUpstream CRD
+  - apiGroups: ["nginx.devops.click"]
+    resources: ["nginxupstreams"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["nginx.devops.click"]
+    resources: ["nginxupstreams/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["nginx.devops.click"]
+    resources: ["nginxupstreams/finalizers"]
+    verbs: ["update"]
+  # Core resources managed by the operator
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  # For service discovery
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+{{- end }}

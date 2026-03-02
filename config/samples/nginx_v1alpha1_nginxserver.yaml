@@ -1,0 +1,36 @@
+apiVersion: nginx.devops.click/v1alpha1
+kind: NginxServer
+metadata:
+  name: example-nginx
+  namespace: default
+spec:
+  replicas: 2
+  image: nginx:1.27-alpine
+  imagePullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  service:
+    type: ClusterIP
+    ports:
+      - name: http
+        port: 80
+        targetPort: 80
+  globalConfig:
+    workerProcesses: "auto"
+    workerConnections: 1024
+    keepaliveTimeout: "65s"
+    clientMaxBodySize: "10m"
+    serverTokens: false
+    gzipEnabled: true
+    errorLogLevel: "warn"
+  monitoring:
+    enabled: true
+    port: 9113
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1

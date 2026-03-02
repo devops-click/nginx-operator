@@ -1,0 +1,17 @@
+# CODEOWNERS for NGINX Operator
+# These owners will be requested for review on PRs that modify matching paths.
+
+# Global owners
+* @devops-click
+
+# API types require careful review
+/api/ @devops-click
+
+# Controller logic
+/internal/controller/ @devops-click
+
+# Helm chart
+/charts/ @devops-click
+
+# CI/CD
+/.github/ @devops-click

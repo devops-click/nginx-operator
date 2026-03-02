@@ -1,0 +1,23 @@
+apiVersion: nginx.devops.click/v1alpha1
+kind: NginxUpstream
+metadata:
+  name: example-backend
+  namespace: default
+spec:
+  serverRef: example-nginx
+  backends:
+    - address: 10.0.1.1
+      port: 8080
+      weight: 1
+      maxFails: 3
+      failTimeout: "10s"
+    - address: 10.0.1.2
+      port: 8080
+      weight: 1
+      maxFails: 3
+      failTimeout: "10s"
+  loadBalancing:
+    algorithm: least_conn
+  keepalive: 32
+  keepaliveTimeout: "60s"
+  keepaliveRequests: 100
