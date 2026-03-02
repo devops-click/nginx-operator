@@ -69,7 +69,7 @@ func Get() Info {
 // Usage:
 //
 //	fmt.Println(version.Get().String())
-//	// Output: nginx-operator dev (commit: unknown, built: unknown, go: go1.22.0, platform: linux/amd64)
+//	// Output: nginx-operator dev (commit: unknown, built: unknown, go: go1.24.0, platform: linux/amd64)
 func (i Info) String() string {
 	return fmt.Sprintf("nginx-operator %s (commit: %s, built: %s, go: %s, platform: %s)",
 		i.Version, i.GitCommit, i.BuildDate, i.GoVersion, i.Platform)

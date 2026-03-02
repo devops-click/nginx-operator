@@ -58,3 +58,7 @@ PROJECT.md
 .windsurf/
 .windsurf-ignore
 logs.txt
+MINE.md
+examples/config-*/
+examples/edge-*/
+examples/config-example-for-migration/

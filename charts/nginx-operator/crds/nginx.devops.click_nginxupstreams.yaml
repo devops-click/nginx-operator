@@ -1,0 +1,349 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.4
+  name: nginxupstreams.nginx.devops.click
+spec:
+  group: nginx.devops.click
+  names:
+    kind: NginxUpstream
+    listKind: NginxUpstreamList
+    plural: nginxupstreams
+    shortNames:
+    - nu
+    - nxu
+    singular: nginxupstream
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.serverRef
+      name: Server
+      type: string
+    - jsonPath: .status.activeBackends
+      name: Backends
+      type: integer
+    - jsonPath: .status.conditions[?(@.type=='Ready')].status
+      name: Ready
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          NginxUpstream is the Schema for the nginxupstreams API.
+          It represents an NGINX upstream {} block configuration that defines
+          backend servers for proxying traffic.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              NginxUpstreamSpec defines the desired state of an NGINX upstream block.
+              Each NginxUpstream maps to an NGINX upstream {} block and must reference
+              an NginxServer instance that will include this upstream configuration.
+            properties:
+              backends:
+                description: |-
+                  Backends defines the list of upstream backend servers.
+                  At least one backend must be specified.
+                items:
+                  description: NginxBackendSpec defines an upstream backend server.
+                  properties:
+                    address:
+                      description: Address is the backend server address (IP or hostname).
+                      minLength: 1
+                      type: string
+                    backup:
+                      default: false
+                      description: |-
+                        Backup marks this server as a backup server.
+                        It receives requests only when all primary servers are unavailable.
+                      type: boolean
+                    down:
+                      default: false
+                      description: Down marks this server as permanently unavailable.
+                      type: boolean
+                    failTimeout:
+                      default: 10s
+                      description: |-
+                        FailTimeout sets the time during which the specified number of unsuccessful attempts
+                        should happen and the time the server is considered unavailable.
+                      type: string
+                    maxConnections:
+                      default: 0
+                      description: MaxConnections limits the maximum number of simultaneous
+                        active connections.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    maxFails:
+                      default: 3
+                      description: MaxFails sets the number of unsuccessful attempts
+                        before marking the server as unavailable.
+                      format: int32
+                      minimum: 0
+                      type: integer
+                    port:
+                      description: Port is the backend server port.
+                      format: int32
+                      maximum: 65535
+                      minimum: 1
+                      type: integer
+                    weight:
+                      default: 1
+                      description: Weight sets the weight for weighted load balancing.
+                      format: int32
+                      maximum: 100
+                      minimum: 0
+                      type: integer
+                  required:
+                  - address
+                  - port
+                  type: object
+                minItems: 1
+                type: array
+              customUpstreamSnippet:
+                description: CustomUpstreamSnippet allows injecting raw NGINX directives
+                  into the upstream block.
+                type: string
+              healthCheck:
+                description: HealthCheck defines active health checking for upstream
+                  servers.
+                properties:
+                  enabled:
+                    default: false
+                    description: Enabled enables active health checking for upstream
+                      servers.
+                    type: boolean
+                  expectedStatus:
+                    default: 200
+                    description: ExpectedStatus defines the expected HTTP status code
+                      range for a healthy response.
+                    format: int32
+                    type: integer
+                  healthyThreshold:
+                    default: 2
+                    description: HealthyThreshold is the number of consecutive successes
+                      before marking healthy.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  interval:
+                    default: 30s
+                    description: Interval defines how often health checks are performed.
+                    type: string
+                  path:
+                    default: /
+                    description: Path is the URI to request for health checks (HTTP
+                      only).
+                    type: string
+                  timeout:
+                    default: 5s
+                    description: Timeout defines the health check request timeout.
+                    type: string
+                  unhealthyThreshold:
+                    default: 3
+                    description: UnhealthyThreshold is the number of consecutive failures
+                      before marking unhealthy.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                type: object
+              keepalive:
+                default: 32
+                description: Keepalive sets the maximum number of idle keepalive connections
+                  to upstream servers.
+                format: int32
+                minimum: 0
+                type: integer
+              keepaliveRequests:
+                default: 100
+                description: KeepaliveRequests sets the maximum number of requests
+                  through one keepalive connection.
+                format: int32
+                type: integer
+              keepaliveTimeout:
+                default: 60s
+                description: KeepaliveTimeout is the timeout during which an idle
+                  keepalive connection will stay open.
+                type: string
+              loadBalancing:
+                description: LoadBalancing defines the load balancing algorithm.
+                properties:
+                  algorithm:
+                    default: round_robin
+                    description: |-
+                      Algorithm defines the load balancing method.
+                      - round_robin: Default, distributes requests evenly.
+                      - least_conn: Sends to the server with the fewest active connections.
+                      - ip_hash: Ensures requests from the same IP go to the same server.
+                      - random: Selects a random server (with optional two-choice algorithm).
+                    enum:
+                    - round_robin
+                    - least_conn
+                    - ip_hash
+                    - random
+                    type: string
+                  randomTwoChoices:
+                    default: false
+                    description: |-
+                      RandomTwoChoices enables the "two choices" variant for the random algorithm.
+                      When enabled, picks two servers randomly and selects one using least_conn.
+                      Only applies when Algorithm is "random".
+                    type: boolean
+                type: object
+              serverRef:
+                description: |-
+                  ServerRef is the name of the NginxServer resource this upstream belongs to.
+                  The NginxServer must exist in the same namespace.
+                minLength: 1
+                type: string
+              serviceDiscovery:
+                description: |-
+                  ServiceDiscovery enables automatic backend discovery from a Kubernetes Service.
+                  When enabled, Backends field is ignored and endpoints are auto-populated.
+                properties:
+                  enabled:
+                    description: Enabled enables service discovery.
+                    type: boolean
+                  namespace:
+                    description: Namespace is the namespace of the Service. Defaults
+                      to the NginxUpstream's namespace.
+                    type: string
+                  serviceName:
+                    description: ServiceName is the name of the Kubernetes Service
+                      to discover endpoints from.
+                    minLength: 1
+                    type: string
+                  servicePort:
+                    description: ServicePort is the port on the Service to use for
+                      upstream backends.
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                required:
+                - enabled
+                - serviceName
+                - servicePort
+                type: object
+            required:
+            - backends
+            - serverRef
+            type: object
+          status:
+            description: NginxUpstreamStatus defines the observed state of NginxUpstream.
+            properties:
+              activeBackends:
+                description: ActiveBackends is the number of backends currently active
+                  (not down or failed).
+                format: int32
+                type: integer
+              conditions:
+                description: Conditions represent the latest available observations
+                  of the NginxUpstream's state.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              configHash:
+                description: ConfigHash is the SHA-256 hash of the generated upstream
+                  config.
+                type: string
+              discoveredEndpoints:
+                description: |-
+                  DiscoveredEndpoints lists the endpoints discovered via service discovery.
+                  Only populated when ServiceDiscovery is enabled.
+                items:
+                  type: string
+                type: array
+              lastAppliedTime:
+                description: LastAppliedTime is the timestamp when the config was
+                  last applied.
+                format: date-time
+                type: string
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  by the controller.
+                format: int64
+                type: integer
+              totalBackends:
+                description: TotalBackends is the total number of configured backends.
+                format: int32
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
