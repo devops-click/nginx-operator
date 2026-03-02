@@ -44,8 +44,8 @@ const (
 	// configVolumeName is the name of the volume that holds NGINX configuration.
 	configVolumeName = "nginx-config"
 
-	// configMountPath is where the ConfigMap is mounted in the NGINX container.
-	configMountPath = "/etc/nginx"
+	// configMountPath is where the main nginx.conf is mounted (via subPath).
+	configMountPath = "/etc/nginx/nginx.conf"
 
 	// confDMountPath is where server block configs are mounted.
 	confDMountPath = "/etc/nginx/conf.d"
@@ -115,6 +115,12 @@ func (m *ResourceManager) BuildDeployment(server *nginxv1alpha1.NginxServer, rel
 			{
 				Name:      configVolumeName,
 				MountPath: configMountPath,
+				SubPath:   "nginx.conf",
+				ReadOnly:  true,
+			},
+			{
+				Name:      configVolumeName,
+				MountPath: confDMountPath,
 				ReadOnly:  true,
 			},
 		},
@@ -169,7 +175,7 @@ func (m *ResourceManager) BuildDeployment(server *nginxv1alpha1.NginxServer, rel
 		ImagePullPolicy: pullPolicy,
 		Resources:       server.Spec.ReloaderResources,
 		Args: []string{
-			"--watch-dir=/etc/nginx",
+			"--watch-dir=/etc/nginx/conf.d",
 			"--nginx-binary=/usr/sbin/nginx",
 			"--reload-timeout=30s",
 		},
@@ -177,6 +183,12 @@ func (m *ResourceManager) BuildDeployment(server *nginxv1alpha1.NginxServer, rel
 			{
 				Name:      configVolumeName,
 				MountPath: configMountPath,
+				SubPath:   "nginx.conf",
+				ReadOnly:  true,
+			},
+			{
+				Name:      configVolumeName,
+				MountPath: confDMountPath,
 				ReadOnly:  true,
 			},
 		},
