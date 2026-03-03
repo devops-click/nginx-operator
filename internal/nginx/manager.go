@@ -41,10 +41,13 @@ import (
 )
 
 const (
-	// configVolumeName is the name of the volume that holds NGINX configuration.
+	// configVolumeName is the volume projecting only nginx.conf from the ConfigMap.
 	configVolumeName = "nginx-config"
 
-	// configMountPath is where the main nginx.conf is mounted (via subPath).
+	// confDVolumeName is the volume projecting server block files from the ConfigMap.
+	confDVolumeName = "nginx-confd"
+
+	// configMountPath is where nginx.conf is mounted (via subPath, preserves /etc/nginx/).
 	configMountPath = "/etc/nginx/nginx.conf"
 
 	// confDMountPath is where server block configs are mounted.
@@ -119,7 +122,7 @@ func (m *ResourceManager) BuildDeployment(server *nginxv1alpha1.NginxServer, rel
 				ReadOnly:  true,
 			},
 			{
-				Name:      configVolumeName,
+				Name:      confDVolumeName,
 				MountPath: confDMountPath,
 				ReadOnly:  true,
 			},
@@ -187,7 +190,7 @@ func (m *ResourceManager) BuildDeployment(server *nginxv1alpha1.NginxServer, rel
 				ReadOnly:  true,
 			},
 			{
-				Name:      configVolumeName,
+				Name:      confDVolumeName,
 				MountPath: confDMountPath,
 				ReadOnly:  true,
 			},
@@ -199,10 +202,29 @@ func (m *ResourceManager) BuildDeployment(server *nginxv1alpha1.NginxServer, rel
 		},
 	}
 
-	// Build volumes
+	// Build volumes — two projections from the same ConfigMap:
+	// 1. configVolumeName: projects only "nginx.conf" key (mounted via subPath at /etc/nginx/nginx.conf)
+	// 2. confDVolumeName: projects all keys (mounted at /etc/nginx/conf.d/)
+	//    The nginx.conf key will also appear here as a file, but nginx only includes *.conf from conf.d.
 	volumes := []corev1.Volume{
 		{
 			Name: configVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: ConfigMapName(server),
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "nginx.conf",
+							Path: "nginx.conf",
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: confDVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
