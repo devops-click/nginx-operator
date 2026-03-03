@@ -202,10 +202,11 @@ func (m *ResourceManager) BuildDeployment(server *nginxv1alpha1.NginxServer, rel
 		},
 	}
 
-	// Build volumes — two projections from the same ConfigMap:
-	// 1. configVolumeName: projects only "nginx.conf" key (mounted via subPath at /etc/nginx/nginx.conf)
-	// 2. confDVolumeName: projects all keys (mounted at /etc/nginx/conf.d/)
-	//    The nginx.conf key will also appear here as a file, but nginx only includes *.conf from conf.d.
+	// Build volumes:
+	// 1. configVolumeName: projects only "nginx.conf" from main ConfigMap (subPath mount)
+	// 2. confDVolumeName: projects server block configs from a SEPARATE ConfigMap
+	//    This separation is critical — if nginx.conf ends up in conf.d/, NGINX will
+	//    try to parse it as a server block and fail with "directive not allowed here".
 	volumes := []corev1.Volume{
 		{
 			Name: configVolumeName,
@@ -228,8 +229,9 @@ func (m *ResourceManager) BuildDeployment(server *nginxv1alpha1.NginxServer, rel
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: ConfigMapName(server),
+						Name: ConfDConfigMapName(server),
 					},
+					Optional: boolPtr(true),
 				},
 			},
 		},
@@ -390,19 +392,16 @@ func (m *ResourceManager) BuildService(server *nginxv1alpha1.NginxServer) *corev
 	return service
 }
 
-// BuildConfigMap creates a ConfigMap for the NGINX configuration.
+// BuildConfigMap creates the main ConfigMap containing nginx.conf.
 //
 // Usage:
 //
-//	cm := mgr.BuildConfigMap(server, mainConfig, serverConfigs)
+//	cm := mgr.BuildConfigMap(server, mainConfig)
 func (m *ResourceManager) BuildConfigMap(server *nginxv1alpha1.NginxServer, mainConfig string, serverConfigs map[string]string) *corev1.ConfigMap {
 	labels := buildLabels(server)
 
-	data := make(map[string]string)
-	data["nginx.conf"] = mainConfig
-
-	for name, content := range serverConfigs {
-		data[name] = content
+	data := map[string]string{
+		"nginx.conf": mainConfig,
 	}
 
 	return &corev1.ConfigMap{
@@ -412,6 +411,25 @@ func (m *ResourceManager) BuildConfigMap(server *nginxv1alpha1.NginxServer, main
 			Labels:    labels,
 		},
 		Data: data,
+	}
+}
+
+// BuildConfDConfigMap creates the conf.d ConfigMap containing server block configs.
+// Each key becomes a .conf file inside /etc/nginx/conf.d/.
+//
+// Usage:
+//
+//	cm := mgr.BuildConfDConfigMap(server, serverConfigs)
+func (m *ResourceManager) BuildConfDConfigMap(server *nginxv1alpha1.NginxServer, serverConfigs map[string]string) *corev1.ConfigMap {
+	labels := buildLabels(server)
+
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ConfDConfigMapName(server),
+			Namespace: server.Namespace,
+			Labels:    labels,
+		},
+		Data: serverConfigs,
 	}
 }
 
@@ -436,9 +454,14 @@ func ServiceName(server *nginxv1alpha1.NginxServer) string {
 	return fmt.Sprintf("%s-nginx", server.Name)
 }
 
-// ConfigMapName returns the name for the NGINX ConfigMap.
+// ConfigMapName returns the name for the main NGINX ConfigMap (nginx.conf).
 func ConfigMapName(server *nginxv1alpha1.NginxServer) string {
 	return fmt.Sprintf("%s-nginx-config", server.Name)
+}
+
+// ConfDConfigMapName returns the name for the conf.d server blocks ConfigMap.
+func ConfDConfigMapName(server *nginxv1alpha1.NginxServer) string {
+	return fmt.Sprintf("%s-nginx-confd", server.Name)
 }
 
 // --- Internal Helpers ---
@@ -512,4 +535,9 @@ func extractImageTag(image string) string {
 // int64Ptr returns a pointer to an int64 value.
 func int64Ptr(i int64) *int64 {
 	return &i
+}
+
+// boolPtr returns a pointer to a bool value.
+func boolPtr(b bool) *bool {
+	return &b
 }
