@@ -90,14 +90,14 @@ jobs:
           CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/reloader ./cmd/reloader/
 
       - name: Build Docker image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: false
           tags: ghcr.io/${{ github.repository }}:ci
 
       - name: Build Reloader Docker image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.reloader
